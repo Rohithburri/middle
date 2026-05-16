@@ -45,7 +45,7 @@ def checkout(request):
     address_id = request.data.get("address_id")
 
     client = razorpay.Client(
-        auth=(settings.RAZORPAY_KEY_SECRET)
+        auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
     )
 
     try:
