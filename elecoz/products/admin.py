@@ -1,0 +1,177 @@
+
+
+# from django.contrib import admin
+# from django.utils.html import format_html
+# from .models import Product, Category, Brand
+
+
+# # 🔹 CATEGORY ADMIN
+# @admin.register(Category)
+# class CategoryAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'name')
+#     search_fields = ('name',)
+#     ordering = ('name',)
+
+
+# # 🔹 BRAND ADMIN
+# @admin.register(Brand)
+# class BrandAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'name', 'slug')
+#     search_fields = ('name',)
+#     ordering = ('name',)
+
+
+# # 🔹 PRODUCT ADMIN
+# @admin.register(Product)
+# class ProductAdmin(admin.ModelAdmin):
+#     list_display = (
+#         'id',
+#         'name',
+#         'code',
+#         'price',
+#         'category',
+#         'brand',
+#         'pdf',
+#         'image_preview'
+#     )
+
+#     search_fields = ('name', 'code')
+#     list_filter = ('category', 'brand')
+#     ordering = ('-id',)
+
+#     fields = [
+#         'name',
+#         'code',
+#         'price',
+#         'old_price',
+#         'discount',
+#         'ampere',
+#         'poles',
+#         'breaking_capacity',
+#         'setting_type',
+#         'image',
+#         'image2',
+#            'pdf',
+#         'category',
+#         'brand'
+#     ]
+
+#     # 🔥 Make some fields optional in admin form
+#     def get_form(self, request, obj=None, **kwargs):
+#         form = super().get_form(request, obj, **kwargs)
+#         form.base_fields['code'].required = False
+#         form.base_fields['setting_type'].required = False
+#         return form
+
+#     # 🔥 Image preview in admin
+#     # def image_preview(self, obj):
+#     #     if obj.image:
+#     #         return format_html('<img src="{}" width="50" />', obj.image.url)
+#     #     return "-"
+#     # image_preview.short_description = "Image"
+#     def image_preview(self, obj):
+#         if obj.image:
+#             return format_html(
+#                 '<a href="{}" target="_blank"><img src="{}" width="50" /></a>',
+#                 obj.image.url,
+#                 obj.image.url
+#             )
+#         return "-"
+
+
+
+
+
+from django.contrib import admin
+from django.utils.html import format_html
+from .models import Product, Category, Brand
+
+
+# 🔹 CATEGORY ADMIN
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+    search_fields = ('name',)
+    ordering = ('name',)
+
+
+# 🔹 BRAND ADMIN
+@admin.register(Brand)
+class BrandAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'slug')
+    search_fields = ('name',)
+    ordering = ('name',)
+
+
+# 🔹 PRODUCT ADMIN
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = (
+    'id',
+    'name',
+    'code',
+    'price',
+    'category',
+    'brand',
+
+    'auxiliary_contact',
+    'coil_voltage',
+    'duty',
+    'stock_status',
+    'dispatch_date',
+    'warehouse',
+    
+
+    'pdf',
+    'quantity',
+    'image_preview'
+)
+
+    search_fields = ('name', 'code')
+    list_filter = ('category', 'brand')
+    ordering = ('-id',)
+
+    fields = [
+        'name',
+        'code',
+        'price',
+        'old_price',
+        'discount',
+        'ampere',
+        'poles',
+        'breaking_capacity',
+        'setting_type',
+
+        'auxiliary_contact',
+        'coil_voltage',
+        'duty',
+        'stock_status',
+        'dispatch_date',
+        'warehouse',
+        
+
+        'image',
+        'image2',
+           'pdf',
+        'quantity',
+        'category',
+        'brand'
+    ]
+
+    # 🔥 Make some fields optional in admin form
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields['code'].required = False
+        form.base_fields['setting_type'].required = False
+        return form
+
+ 
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html(
+                '<a href="{}" target="_blank"><img src="{}" width="50" /></a>',
+                obj.image.url,
+                obj.image.url
+            )
+        return "-"
+
