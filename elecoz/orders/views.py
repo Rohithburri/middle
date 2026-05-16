@@ -5,6 +5,8 @@ from .serializers import OrderSerializer,WishlistSerializer
 from login.models import Cart
 from products.models import Product
 import razorpay
+from django.conf import settings
+
 
 
 # ✅ CREATE PAYMENT
@@ -16,9 +18,10 @@ def create_payment(request):
         if not amount:
             return Response({"error": "Amount required"}, status=400)
 
+  
         client = razorpay.Client(
-            auth=("rzp_test_SfjxhP3qc1PTMF", "0PP1VDLOwamaV64GEgChgmrS")
-        )
+         auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+         )
 
         payment = client.order.create({
             "amount": int(amount) * 100,
@@ -42,7 +45,7 @@ def checkout(request):
     address_id = request.data.get("address_id")
 
     client = razorpay.Client(
-        auth=("rzp_test_SfjxhP3qc1PTMF", "SECRET_KEY")
+        auth=(settings.RAZORPAY_KEY_SECRET)
     )
 
     try:
