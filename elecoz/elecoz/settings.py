@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
-#import dj_database_url
+import dj_database_url
 from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -93,24 +93,15 @@ WSGI_APPLICATION = 'elecoz.wsgi.application'
 # }
 
 
-#DATABASES = {
-#   "default": dj_database_url.config(
- #       default=os.environ.get("DATABASE_URL"),
-  #      conn_max_age=600,
-   #     ssl_require=True,
-    #)
-#}
-
 DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'eleco',
-            'USER': 'postgres',
-            'PASSWORD': 'rohith@123',
-            'HOST': 'localhost',
-            'PORT': '5432',
-        }
-    }
+  "default": dj_database_url.config(
+       default=os.environ.get("DATABASE_URL"),
+       conn_max_age=600,
+       ssl_require=True,
+    )
+}
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -177,3 +168,10 @@ REST_FRAMEWORK = {
 
 RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID", default="")
 RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET", default="")
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
