@@ -35,7 +35,7 @@ def create_payment(request):
         print("RAZORPAY ERROR:", str(e))
         return Response({"error": str(e)}, status=500)
 
-@api_view(['POST'])
+@api_view(["POST"])
 def checkout(request):
     user_id = request.data.get("user_id")
     payment_id = request.data.get("payment_id")
@@ -43,11 +43,31 @@ def checkout(request):
     signature = request.data.get("razorpay_signature")
     address_id = request.data.get("address_id")
 
-    print("CHECKOUT API CALLED")
-    print("USER ID:", user_id)
-    print("PAYMENT ID:", payment_id)
-    print("RAZORPAY ORDER ID:", razorpay_order_id)
-    print("SIGNATURE:", signature)
+    print("CHECKOUT API CALLED", flush=True)
+    print("USER ID:", user_id, flush=True)
+    print("PAYMENT ID:", payment_id, flush=True)
+    print("RAZORPAY ORDER ID:", razorpay_order_id, flush=True)
+    print("SIGNATURE:", signature, flush=True)
+    print("ADDRESS ID:", address_id, flush=True)
+
+    if not user_id:
+        return Response({"error": "user_id is required"}, status=400)
+
+    if not address_id:
+        return Response({"error": "address_id is required"}, status=400)
+
+    selected_address = Address.objects.filter(id=address_id, user_id=user_id).first()
+
+    if not selected_address:
+        return Response({"error": "Selected address not found"}, status=400)
+
+    print("SELECTED ADDRESS:", selected_address, flush=True)
+    print("SELECTED ADDRESS EMAIL:", selected_address.email, flush=True)
+
+    cart_items = Cart.objects.filter(user_id=user_id)
+
+    if not cart_items.exists():
+        return Response({"error": "Cart is empty"}, status=400)
 
     client = razorpay.Client(
         auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
@@ -60,22 +80,19 @@ def checkout(request):
             "razorpay_signature": signature,
         })
         payment_verified = True
-        print("PAYMENT VERIFIED SUCCESS")
+        print("PAYMENT VERIFIED SUCCESS", flush=True)
+
     except Exception as e:
         payment_verified = False
-        print("PAYMENT VERIFY FAILED:", str(e))
-
-    cart_items = Cart.objects.filter(user_id=user_id)
-
-    if not cart_items.exists():
-        return Response({"error": "Cart is empty"}, status=400)
+        print("PAYMENT VERIFY FAILED:", str(e), flush=True)
+        traceback.print_exc()
 
     total = 0
+
     for item in cart_items:
         total += item.price * item.quantity
 
     status_value = "Completed" if payment_verified else "Failed"
-    selected_address = Address.objects.filter(id=address_id).first()
 
     order = Order.objects.create(
         user_id=user_id,
@@ -87,10 +104,9 @@ def checkout(request):
         address=selected_address,
     )
 
-    print("ORDER CREATED:", order.id)
-    print("ORDER STATUS:", order.status)
+    print("ORDER CREATED:", order.id, flush=True)
+    print("ORDER STATUS:", order.status, flush=True)
 
-    # ✅ Create order items first
     for item in cart_items:
         OrderItem.objects.create(
             order=order,
@@ -101,7 +117,6 @@ def checkout(request):
             qty=item.quantity,
         )
 
-        # ✅ Reduce stock inside loop
         product = Product.objects.filter(id=item.product_id).first()
 
         if product:
@@ -112,22 +127,26 @@ def checkout(request):
 
             product.save()
 
-    print("ORDER ITEMS CREATED")
+    print("ORDER ITEMS CREATED", flush=True)
 
-    # ✅ Send invoice after order items are created
     if payment_verified:
         try:
-            print("SENDING INVOICE EMAIL...")
+            print("SENDING INVOICE EMAIL...", flush=True)
+            print("ORDER ADDRESS EMAIL:", order.address.email if order.address else None, flush=True)
+
             send_invoice_email(order)
 
-            order.invoice_sent = True
-            order.save(update_fields=["invoice_sent"])
+            order.refresh_from_db()
 
-            print("INVOICE EMAIL SENT SUCCESSFULLY")
+            print("INVOICE EMAIL SENT SUCCESSFULLY", flush=True)
+            print("INVOICE SENT STATUS:", order.invoice_sent, flush=True)
+
         except Exception as e:
-            print("INVOICE EMAIL ERROR:", str(e))
+            print("INVOICE EMAIL ERROR:", str(e), flush=True)
+            traceback.print_exc()
+
     else:
-        print("EMAIL NOT SENT BECAUSE PAYMENT NOT VERIFIED")
+        print("EMAIL NOT SENT BECAUSE PAYMENT NOT VERIFIED", flush=True)
 
     cart_items.delete()
 
@@ -136,6 +155,8 @@ def checkout(request):
         "verified": payment_verified,
         "order_id": order.id,
         "invoice_sent": order.invoice_sent,
+        "invoice_sent_at": order.invoice_sent_at,
+        "customer_email": selected_address.email,
     })
 
 # ✅ GET ORDERS
