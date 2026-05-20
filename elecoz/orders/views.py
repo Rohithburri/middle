@@ -35,14 +35,19 @@ def create_payment(request):
         print("RAZORPAY ERROR:", str(e))
         return Response({"error": str(e)}, status=500)
 
-
 @api_view(['POST'])
 def checkout(request):
     user_id = request.data.get("user_id")
     payment_id = request.data.get("payment_id")
-    order_id = request.data.get("razorpay_order_id")
+    razorpay_order_id = request.data.get("razorpay_order_id")
     signature = request.data.get("razorpay_signature")
     address_id = request.data.get("address_id")
+
+    print("CHECKOUT API CALLED")
+    print("USER ID:", user_id)
+    print("PAYMENT ID:", payment_id)
+    print("RAZORPAY ORDER ID:", razorpay_order_id)
+    print("SIGNATURE:", signature)
 
     client = razorpay.Client(
         auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
@@ -50,96 +55,88 @@ def checkout(request):
 
     try:
         client.utility.verify_payment_signature({
-            'razorpay_order_id': order_id,
-            'razorpay_payment_id': payment_id,
-            'razorpay_signature': signature
+            "razorpay_order_id": razorpay_order_id,
+            "razorpay_payment_id": payment_id,
+            "razorpay_signature": signature,
         })
         payment_verified = True
-    except:
+        print("PAYMENT VERIFIED SUCCESS")
+    except Exception as e:
         payment_verified = False
+        print("PAYMENT VERIFY FAILED:", str(e))
 
     cart_items = Cart.objects.filter(user_id=user_id)
 
-    # ❌ IMPORTANT FIX
     if not cart_items.exists():
-        return Response({"error": "Cart is empty"})
+        return Response({"error": "Cart is empty"}, status=400)
 
     total = 0
-
     for item in cart_items:
         total += item.price * item.quantity
 
-    # status = "Completed" if payment_verified else "Failed"
-    # status = "Completed"
-    # selected_address = Address.objects.filter(id=address_id).first()
-
-    # # ✅ CREATE ORDER AFTER CALCULATING
-    # order = Order.objects.create(
-    #     user_id=user_id,
-    #     total=total,
-    #     payment_id=payment_id,
-    #     status=status,
-    #     address=selected_address
-    # )
-    status = "Completed" if payment_verified else "Failed"
+    status_value = "Completed" if payment_verified else "Failed"
     selected_address = Address.objects.filter(id=address_id).first()
 
-# ✅ CREATE ORDER AFTER PAYMENT VERIFY
     order = Order.objects.create(
-       user_id=user_id,
-       total=total,
-       payment_id=payment_id,
-       razorpay_order_id=order_id,
-       razorpay_signature=signature,
-       status=status,
-       address=selected_address
-     )
-
-# ✅ SEND INVOICE ONLY IF PAYMENT SUCCESS
-    if payment_verified and not order.invoice_sent:
-        try:
-            send_invoice_email(order)
-        except Exception as e:
-            print("INVOICE EMAIL ERROR:", str(e))
-    # ✅ CREATE ITEMS
-    # for item in cart_items:
-    #     OrderItem.objects.create(
-    #         order=order,
-    #         product_id=item.product_id,
-    #         title=item.title,
-    #         price=item.price,
-    #         qty=item.quantity
-    #     )
-    for item in cart_items:
-
-        OrderItem.objects.create(
-        order=order,
-        product_id=item.product_id,
-        title=item.title,
-        image=item.image,
-        price=item.price,
-        qty=item.quantity
+        user_id=user_id,
+        total=total,
+        payment_id=payment_id,
+        razorpay_order_id=razorpay_order_id,
+        razorpay_signature=signature,
+        status=status_value,
+        address=selected_address,
     )
 
-    # ✅ REDUCE PRODUCT STOCK
-    product = Product.objects.filter(id=item.product_id).first()
+    print("ORDER CREATED:", order.id)
+    print("ORDER STATUS:", order.status)
 
-    if product:
-        product.quantity -= item.quantity
+    # ✅ Create order items first
+    for item in cart_items:
+        OrderItem.objects.create(
+            order=order,
+            product_id=item.product_id,
+            title=item.title,
+            image=item.image,
+            price=item.price,
+            qty=item.quantity,
+        )
 
-        if product.quantity < 0:
-            product.quantity = 0
+        # ✅ Reduce stock inside loop
+        product = Product.objects.filter(id=item.product_id).first()
 
-        product.save()
+        if product:
+            product.quantity -= item.quantity
 
-    # ✅ CLEAR CART
+            if product.quantity < 0:
+                product.quantity = 0
+
+            product.save()
+
+    print("ORDER ITEMS CREATED")
+
+    # ✅ Send invoice after order items are created
+    if payment_verified:
+        try:
+            print("SENDING INVOICE EMAIL...")
+            send_invoice_email(order)
+
+            order.invoice_sent = True
+            order.save(update_fields=["invoice_sent"])
+
+            print("INVOICE EMAIL SENT SUCCESSFULLY")
+        except Exception as e:
+            print("INVOICE EMAIL ERROR:", str(e))
+    else:
+        print("EMAIL NOT SENT BECAUSE PAYMENT NOT VERIFIED")
+
     cart_items.delete()
 
     return Response({
         "message": "Order placed successfully",
-        "verified": payment_verified
+        "verified": payment_verified,
+        "order_id": order.id,
+        "invoice_sent": order.invoice_sent,
     })
-
 
 # ✅ GET ORDERS
 @api_view(['GET'])
