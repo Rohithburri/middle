@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
-import dj_database_url
+#import dj_database_url
 from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -93,15 +93,24 @@ WSGI_APPLICATION = 'elecoz.wsgi.application'
 # }
 
 
+#DATABASES = {
+#   "default": dj_database_url.config(
+ #       default=os.environ.get("DATABASE_URL"),
+  #      conn_max_age=600,
+   #     ssl_require=True,
+    #)
+#}
+
 DATABASES = {
-    "default": dj_database_url.config(
-        default=os.environ.get("DATABASE_URL"),
-        conn_max_age=600,
-        ssl_require=True,
-    )
-}
-
-
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'eleco',
+            'USER': 'postgres',
+            'PASSWORD': 'rohith@123',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 

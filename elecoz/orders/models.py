@@ -3,11 +3,12 @@ from django.db import models
 class Order(models.Model):
     user_id = models.IntegerField()
     total = models.FloatField()
+
     address = models.ForeignKey(
-    'Address',
-    on_delete=models.SET_NULL,
-    null=True,
-    blank=True
+        'Address',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
 
     status = models.CharField(
@@ -15,16 +16,26 @@ class Order(models.Model):
         choices=[
             ("Pending", "Pending"),
             ("Processing", "Processing"),
-            ("Completed", "Completed"),  # ✅ FIXED
-            ("Failed", "Failed"),        # ✅ FIXED
+            ("Completed", "Completed"),
+            ("Failed", "Failed"),
         ],
         default="Pending"
     )
 
-    # 🔥 ADD THIS
     payment_id = models.CharField(max_length=255, null=True, blank=True)
 
+    # Add these for Razorpay verification
+    razorpay_order_id = models.CharField(max_length=255, null=True, blank=True)
+    razorpay_signature = models.CharField(max_length=500, null=True, blank=True)
+
+    # Add these for invoice email
+    invoice_sent = models.BooleanField(default=False)
+    invoice_sent_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Order #{self.id} - User {self.user_id}"
 
 
 # 🔹 ORDER ITEM MODEL

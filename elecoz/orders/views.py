@@ -6,7 +6,7 @@ from login.models import Cart
 from products.models import Product
 import razorpay
 from django.conf import settings
-
+from .utils import send_invoice_email
 
 
 # ✅ CREATE PAYMENT
@@ -70,18 +70,37 @@ def checkout(request):
         total += item.price * item.quantity
 
     # status = "Completed" if payment_verified else "Failed"
-    status = "Completed"
+    # status = "Completed"
+    # selected_address = Address.objects.filter(id=address_id).first()
+
+    # # ✅ CREATE ORDER AFTER CALCULATING
+    # order = Order.objects.create(
+    #     user_id=user_id,
+    #     total=total,
+    #     payment_id=payment_id,
+    #     status=status,
+    #     address=selected_address
+    # )
+    status = "Completed" if payment_verified else "Failed"
     selected_address = Address.objects.filter(id=address_id).first()
 
-    # ✅ CREATE ORDER AFTER CALCULATING
+# ✅ CREATE ORDER AFTER PAYMENT VERIFY
     order = Order.objects.create(
-        user_id=user_id,
-        total=total,
-        payment_id=payment_id,
-        status=status,
-        address=selected_address
-    )
+       user_id=user_id,
+       total=total,
+       payment_id=payment_id,
+       razorpay_order_id=order_id,
+       razorpay_signature=signature,
+       status=status,
+       address=selected_address
+     )
 
+# ✅ SEND INVOICE ONLY IF PAYMENT SUCCESS
+    if payment_verified and not order.invoice_sent:
+        try:
+            send_invoice_email(order)
+        except Exception as e:
+            print("INVOICE EMAIL ERROR:", str(e))
     # ✅ CREATE ITEMS
     # for item in cart_items:
     #     OrderItem.objects.create(
