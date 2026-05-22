@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'orders',
     'enquiry',   # ✅ ADD THIS
     'supportapp',
+    'import_export',
 ]
 
 MIDDLEWARE = [

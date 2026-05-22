@@ -63,7 +63,21 @@ from .models import Enquiry
 
 # admin.site.register(Enquiry, EnquiryAdmin)
 
-class EnquiryAdmin(admin.ModelAdmin):
+from django.contrib import admin
+from import_export import resources
+from import_export.admin import ImportExportModelAdmin
+from .models import Enquiry
+
+
+class EnquiryResource(resources.ModelResource):
+    class Meta:
+        model = Enquiry
+
+
+@admin.register(Enquiry)
+class EnquiryAdmin(ImportExportModelAdmin):
+    resource_class = EnquiryResource
+
     list_display = [
         'id',
         'user_id',
@@ -87,5 +101,3 @@ class EnquiryAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at']
 
     date_hierarchy = 'created_at'
-
-admin.site.register(Enquiry, EnquiryAdmin)

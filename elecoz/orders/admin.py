@@ -40,18 +40,25 @@
 
 
 from django.contrib import admin
-from .models import Order, OrderItem, Wishlist
+from import_export import resources
+from import_export.admin import ImportExportModelAdmin
+from .models import Order, OrderItem, Wishlist, Address
 
 
-# 🔹 INLINE: Show order items inside Order
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
 
 
-# 🔹 ORDER ADMIN
+class OrderResource(resources.ModelResource):
+    class Meta:
+        model = Order
+
+
 @admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
+class OrderAdmin(ImportExportModelAdmin):
+    resource_class = OrderResource
+
     list_display = [
         'id',
         'user_id',
@@ -82,37 +89,50 @@ class OrderAdmin(admin.ModelAdmin):
 
     date_hierarchy = 'created_at'
 
-    # 🔥 Show total quantity of items
     def total_items(self, obj):
         return sum(item.qty for item in obj.items.all())
 
     total_items.short_description = "Items"
 
 
-# 🔹 ORDER ITEM ADMIN
+class OrderItemResource(resources.ModelResource):
+    class Meta:
+        model = OrderItem
+
+
 @admin.register(OrderItem)
-class OrderItemAdmin(admin.ModelAdmin):
+class OrderItemAdmin(ImportExportModelAdmin):
+    resource_class = OrderItemResource
+
     list_display = ['id', 'order', 'title', 'price', 'qty']
     search_fields = ['title']
     ordering = ['-id']
 
 
-# 🔹 WISHLIST ADMIN
+class WishlistResource(resources.ModelResource):
+    class Meta:
+        model = Wishlist
+
+
 @admin.register(Wishlist)
-class WishlistAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user_id', 'title','image', 'price', 'created_at']
+class WishlistAdmin(ImportExportModelAdmin):
+    resource_class = WishlistResource
+
+    list_display = ['id', 'user_id', 'title', 'image', 'price', 'created_at']
     search_fields = ['title', 'user_id__exact']
     ordering = ['-id']
     readonly_fields = ['created_at']
 
 
+class AddressResource(resources.ModelResource):
+    class Meta:
+        model = Address
 
-from .models import Address
 
-
-# 🔹 ADDRESS ADMIN (PROPER)
 @admin.register(Address)
-class AddressAdmin(admin.ModelAdmin):
+class AddressAdmin(ImportExportModelAdmin):
+    resource_class = AddressResource
+
     list_display = [
         "id",
         "user_id",
@@ -142,17 +162,3 @@ class AddressAdmin(admin.ModelAdmin):
     ordering = ["-created_at"]
 
     readonly_fields = ["created_at"]
-
-
-# admin.py
-from django.contrib import admin
-from .models import Contact
-
-class ContactAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "email", "message", "created_at")
-    search_fields = ("name", "email", "message")
-    list_filter = ("created_at",)
-    ordering = ("-created_at",)
-    readonly_fields = ("created_at",)
-
-admin.site.register(Contact, ContactAdmin)
