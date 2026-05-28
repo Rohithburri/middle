@@ -9,6 +9,40 @@ class Category(models.Model):
         return self.name
 
 
+from django.db import models
+from django.utils.text import slugify
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    image = models.ImageField(upload_to="categories/", null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+class SubCategory(models.Model):
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        related_name="subcategories"
+    )
+    name = models.CharField(max_length=100)
+    image = models.ImageField(upload_to="subcategories/", null=True, blank=True)
+    slug = models.SlugField(unique=True, blank=True)
+
+    class Meta:
+        unique_together = ("category", "name")
+        verbose_name_plural = "Sub Categories"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(f"{self.category.name}-{self.name}")
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.category.name} - {self.name}"
+
 
 from django.utils.text import slugify
 
