@@ -85,7 +85,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import Product, Category, Brand
+from .models import Product, Category, Brand, SubCategory
 
 
 class CategoryResource(resources.ModelResource):
@@ -96,10 +96,23 @@ class CategoryResource(resources.ModelResource):
 @admin.register(Category)
 class CategoryAdmin(ImportExportModelAdmin):
     resource_class = CategoryResource
-
     list_display = ('id', 'name')
     search_fields = ('name',)
     ordering = ('name',)
+
+
+class SubCategoryResource(resources.ModelResource):
+    class Meta:
+        model = SubCategory
+
+
+@admin.register(SubCategory)
+class SubCategoryAdmin(ImportExportModelAdmin):
+    resource_class = SubCategoryResource
+    list_display = ('id', 'name', 'category', 'slug')
+    search_fields = ('name', 'category__name')
+    list_filter = ('category',)
+    ordering = ('category', 'name')
 
 
 class BrandResource(resources.ModelResource):
@@ -110,7 +123,6 @@ class BrandResource(resources.ModelResource):
 @admin.register(Brand)
 class BrandAdmin(ImportExportModelAdmin):
     resource_class = BrandResource
-
     list_display = ('id', 'name', 'slug')
     search_fields = ('name',)
     ordering = ('name',)
@@ -126,59 +138,32 @@ class ProductAdmin(ImportExportModelAdmin):
     resource_class = ProductResource
 
     list_display = (
-        'id',
-        'name',
-        'code',
-        'price',
-        'category',
-        'brand',
-        'auxiliary_contact',
-        'coil_voltage',
-        'duty',
-        'stock_status',
-        'dispatch_date',
-        'warehouse',
-        'pdf',
-        'quantity',
-        'image_preview'
+        'id', 'name', 'code', 'price',
+        'category', 'subcategory', 'brand',
+        'auxiliary_contact', 'coil_voltage', 'duty',
+        'stock_status', 'dispatch_date', 'warehouse',
+        'pdf', 'quantity', 'image_preview'
     )
 
     search_fields = ('name', 'code')
-    list_filter = ('category', 'brand')
+    list_filter = ('category', 'subcategory', 'brand')
     ordering = ('-id',)
 
     fields = [
-        'name',
-        'code',
-        'price',
-        'old_price',
-        'discount',
-        'ampere',
-        'poles',
-        'breaking_capacity',
-        'setting_type',
-        'auxiliary_contact',
-        'coil_voltage',
-        'duty',
-        'stock_status',
-        'dispatch_date',
-        'warehouse',
-        'image',
-        'image2',
-        'pdf',
-        'quantity',
-        'category',
-        'brand'
+        'name', 'code', 'price', 'old_price', 'discount',
+        'ampere', 'poles', 'breaking_capacity', 'setting_type',
+        'auxiliary_contact', 'coil_voltage', 'duty',
+        'stock_status', 'dispatch_date', 'warehouse',
+        'image', 'image2', 'pdf', 'quantity',
+        'category', 'subcategory', 'brand'
     ]
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
 
-        if 'code' in form.base_fields:
-            form.base_fields['code'].required = False
-
-        if 'setting_type' in form.base_fields:
-            form.base_fields['setting_type'].required = False
+        for field in ['code', 'setting_type']:
+            if field in form.base_fields:
+                form.base_fields[field].required = False
 
         return form
 
